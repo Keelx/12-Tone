@@ -1,6 +1,7 @@
 use std::os;
 use std::rand::{task_rng, Rng};
 use std::num::ToPrimitive;
+use std::io;
 
 //converts 1-12 to the pitch classes
 fn int_to_pitch(n: int) -> &'static str {
@@ -56,36 +57,38 @@ fn main() {
 
   let args = os::args();
   let mut bars: int = 8;
-  let mut complex_rhythm: bool;
+  let mut complex_rhythm: bool = false;
+
+  //this part could probably be cleaned up...
   if args.len() == 1 {
     println!("No valid bar count found, defaulting to 8.");
+    println!("Defaulting to standard rhythm.");
   } else {
     let bars_in = &args[1];
     bars = match from_str(bars_in.as_slice()){
       Some(n) => n,
       None => {println!("No valid bar count found, defaulting to 8."); 8}
     };
-    if bars < 4 {
+    /*if bars < 4 {
       println!("Must be minimum 4 bars! Defaulting to 4.");
       bars = 4;
-    }
-  }
-  if args.len() == 2 {
-    complex_rhythm = false;
-    println!("Defaulting to standard rhythm.");
-  } else {
-    let rhythm_in = &args[2];
-    if rhythm_in.as_slice() == "complex" {
-      complex_rhythm = true;
-      println!("Using complex rhythm.");
+    }*/
+    if args.len() >= 3 {
+      let rhythm_in = &args[2];
+      if rhythm_in.as_slice() == "complex" {
+        complex_rhythm = true;
+        println!("Using complex rhythm.");
+      } else {
+        complex_rhythm = false;
+        println!("Using standard rhythm.");
+      }
     } else {
-      complex_rhythm = false;
-      println!("Using standard rhythm.");
+      println!("Defaulting to standard rhythm.");
     }
   }
 
   let mut pitch = [0i, ..12]; //can be 1 - 12
-  let mut length = [0.0, ..12]; //can be 0.125 - 1
+  let mut length = [0.0, ..12]; //can be 0.0625 - 1
 
   println!("Generating a 12 tone melody...");
   'pitch: loop {
@@ -116,7 +119,7 @@ fn main() {
       if complex_rhythm {
         length[i] = (task_rng().gen_range(1u, 16u) as f32) / 16.0; //generates sixteenth notes
       } else {
-        length[i] = int_to_length(task_rng().gen_range(1u, 5u) as int);
+        length[i] = int_to_length(task_rng().gen_range(1u, 6u) as int); //from 2u to 6u to omit whole notes
       }
     }
     //if the length doesn't fit in the bar count, re-loop until it does
@@ -136,5 +139,14 @@ fn main() {
     for i in range(0, 12) {
       println!("{}  {}", int_to_pitch(pitch[i]), f32_to_length(length[i]));
     }
+  }
+
+  //needlessly complex exit code because rustc complains when I just want to BLOCK UNTIL INPUT but NOOOOO I have to CREATE -and- USE the STDIN for SOME REASON
+  println!("");
+  println!("Press Enter to exit.");
+
+  let mut exit: String = "asdf".to_string(); //the single most useless code I've ever written
+  while exit.as_slice().trim() != "" {
+    exit = io::stdin().read_line().ok().expect("");
   }
 }
